@@ -22,7 +22,7 @@ class sinGen:
         phase = np.random.uniform(self.phase[0],self.phase[1], [self.classNum])
         outputs = np.zeros([self.metaUpdate, self.innerGradUpdate, self.dim_output])
         init_inputs = np.zeros([self.metaUpdate, self.innerGradUpdate, self.dim_input])
-        for i in range (self.metaUpdate):
+        for i in range (self.classNum):
             init_inputs[i] = np.random.uniform(self.input_range[0],self.input_range[1], [self.classNum , 1])
             outputs[i] = amplitude[i] * np.sin(init_inputs[i]-phase[i])
         return init_inputs, outputs, amplitude , phase
