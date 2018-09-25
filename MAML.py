@@ -73,7 +73,7 @@ class MAML:
                 input_1, input_2, label_1, label_2 = dictionaryTensor
             
                 output_task_2_list, loss_task_2_list = [],[]
-                output_task_1 = self.forwardStep(input_1,weight=weights, reuse= reuse)
+                output_task_1 = self.forwardStep(input_1, weights, reuse= reuse)
                 
                 loss_task_1 = self.lossfunction(output_task_1, label_1)
                 # print(loss_task_1)
@@ -81,18 +81,18 @@ class MAML:
                 gradients = dict(zip(weights.keys(), grads))
                 fast_weights = dict(zip(weights.keys(), [weights[key] - self.adamlr*gradients[key] for key in weights.keys()]))
                 # print(fast_weights)
-                output_task_2 = self.forwardStep(input_2, weight=fast_weights, reuse= reuse)
+                output_task_2 = self.forwardStep(input_2, fast_weights, reuse= reuse)
                 
                 output_task_2_list.append(output_task_2)
                 loss_task_2_list.append(self.lossfunction(output_task_2, label_2))
 
                 for i in range (number_of_update -1):
-                    output_task_1_2 = self.forwardStep(input_1, weight=fast_weights, reuse= reuse)
+                    output_task_1_2 = self.forwardStep(input_1, fast_weights, reuse= reuse)
                     loss_task_1_2 = self.lossfunction(output_task_1_2, label_1)
                     grads = tf.gradients(loss_task_1_2, list(fast_weights.values()))
                     gradients = dict(zip(fast_weights.keys(), grads))
                     fast_weights = dict(zip(fast_weights.keys(), [fast_weights[key] - self.update_lr*gradients[key] for key in fast_weights.keys()]))
-                    output_task_2 = self.forwardStep(input_2, weight=fast_weights, reuse=reuse)
+                    output_task_2 = self.forwardStep(input_2, fast_weights, reuse=reuse)
                     output_task_2_list.append(output_task_2)
                     loss_task_2_list.append(self.lossfunction(output_task_2, label_2))
 
@@ -103,10 +103,12 @@ class MAML:
 
             output_task_1,output_task_2_list, loss_task_1, loss_task_2_list = tf.map_fn(metaLearn_task, elems=(self.input_1, self.input_2, self.label_1, self.label_2), dtype= output_dtype, parallel_iterations= Flags.meta_batch_size)
         self.pre_meta_loss = tf.reduce_mean(loss_task_1)/tf.to_float(Flags.meta_batch_size)
+        # total_losses2 = [tf.reduce_sum(loss_task_2_list[j]) / tf.to_float(FLAGS.meta_batch_size) for j in range(number_of_update)]
+
         self.post_meta_loss = [ tf.reduce_mean(task_2_loss)/tf.to_float(Flags.meta_batch_size) for task_2_loss in loss_task_2_list]
         
         optimizer = tf.train.AdamOptimizer(Flags.meta_lr)
-        gvs = optimizer.compute_gradients( tf.reduce_mean(output_task_2_list[number_of_update-1])/ tf.to_float(Flags.meta_batch_size))
+        gvs = optimizer.compute_gradients( self.post_meta_loss[number_of_update-1])
         self.metatrain_op = optimizer.apply_gradients(gvs)
         tf.summary.scalar('Pre-update loss', self.pre_meta_loss )
         for i in range(number_of_update):
