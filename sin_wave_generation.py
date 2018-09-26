@@ -18,11 +18,11 @@ class sinGen:
             self.generate = self.generateSinWave
 
     def generateSinWave(self, train = True):
-        amplitude = np.random.uniform(self.ampli[0],self.ampli[1], [self.classNum])
-        phase = np.random.uniform(self.phase[0],self.phase[1], [self.classNum])
+        amplitude = np.random.uniform(self.ampli[0],self.ampli[1], [self.metaUpdate])
+        phase = np.random.uniform(self.phase[0],self.phase[1], [self.metaUpdate])
         outputs = np.zeros([self.metaUpdate, self.innerGradUpdate, self.dim_output])
         init_inputs = np.zeros([self.metaUpdate, self.innerGradUpdate, self.dim_input])
-        for i in range (self.classNum):
+        for i in range (self.metaUpdate):
             init_inputs[i] = np.random.uniform(self.input_range[0],self.input_range[1], [self.classNum , 1])
             outputs[i] = amplitude[i] * np.sin(init_inputs[i]-phase[i])
         return init_inputs, outputs, amplitude , phase
